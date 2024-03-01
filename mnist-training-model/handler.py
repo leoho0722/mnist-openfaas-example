@@ -13,7 +13,7 @@ def handle(req):
     """
 
     minioClient = connect_minio()
-    bucket_names = os.environ["bucket_names"]
+    bucket_names = get_bucket_names()
     create_buckets(minioClient, bucket_names)
 
     # 從 Minio 取得上一個階段的資料
@@ -42,7 +42,11 @@ def handle(req):
                           bucket_name=bucket_names[0],
                           object_name="training_result",
                           upload_data=training_result)
-    return req
+    
+    # 觸發下一個階段
+    trigger(os.environ["next_stage"])
+
+    return response(200, f"mnist-training-model completed, trigger stage {os.environ["next_stage"]}...")
 
 
 def training_model(model, normalize_data, onehot_data):
@@ -81,17 +85,22 @@ def connect_minio():
     )
 
 
-def create_buckets(client, bucket_names: str):
+def get_bucket_names():
+    """從環境變數中取得 Minio Bucket 名稱"""
+
+    bucket_names = os.environ["bucket_names"]
+    return bucket_names.split(",")
+
+
+def create_buckets(client, bucket_names: list[str]):
     """建立 Minio Bucket
 
     Args:
         client: Minio Client instance
-        bucket_names (str): 要建立的 Minio Bucket 名稱
+        bucket_names (list[str]): 要建立的 Minio Bucket 名稱
     """
 
-    names = bucket_names.split(",")
-
-    for name in names:
+    for name in bucket_names:
         if not client.bucket_exists(name):
             client.make_bucket(name)
             print(f"Bucket {name} created")
@@ -157,3 +166,17 @@ def trigger(next_stage: str):
         "http://gateway.openfaas:8080/function/mnist-faas-trigger",
         json=req_body
     )
+
+
+def response(statusCode: int, message: str):
+    """Create an HTTP response.
+
+    Args:
+        statusCode (int): HTTP status code
+        message (str): trigger message
+    """
+
+    return {
+        "statusCode": statusCode,
+        "message": message,
+    }
