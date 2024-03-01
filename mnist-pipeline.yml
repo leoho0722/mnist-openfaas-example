@@ -10,9 +10,7 @@ functions:
     image: leoho0722/mnist-preprocess:0.0.1
     environment:
       next_stage: "mnist-model-build"
-      bucket_names:
-        - mnist-normalize
-        - mnist-onehot-encoding
+      bucket_names: "mnist-normalize,mnist-onehot-encoding"
 
   # Stage 2: 建立模型
   mnist-model-build:
@@ -21,8 +19,7 @@ functions:
     image: leoho0722/mnist-model-build:0.0.1
     environment:
       next_stage: "mnist-training-model"
-      bucket_names:
-        - mnist-model-build
+      bucket_names: "mnist-model-build"
 
   # Stage 3: 訓練模型
   mnist-training-model:
@@ -31,8 +28,7 @@ functions:
     image: leoho0722/mnist-training-model:0.0.1
     environment:
       next_stage: "mnist-model-evaluate"
-      bucket_names:
-        - mnist-training-model
+      bucket_names: "mnist-training-model"
 
   # Stage 4: 模型評估與預測
   mnist-model-evaluate:

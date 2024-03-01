@@ -108,15 +108,17 @@ def connect_minio():
     )
 
 
-def create_buckets(client, bucket_names):
+def create_buckets(client, bucket_names: str):
     """建立 Minio Bucket
 
     Args:
         client: Minio Client instance
-        bucket_names: Minio Bucket 名稱
+        bucket_names (str): 要建立的 Minio Bucket 名稱
     """
 
-    for name in bucket_names:
+    names = bucket_names.split(",")
+
+    for name in names:
         if not client.bucket_exists(name):
             client.make_bucket(name)
             print(f"Bucket {name} created")
