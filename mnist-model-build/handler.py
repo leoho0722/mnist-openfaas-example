@@ -27,9 +27,10 @@ def handle(req):
                           upload_data=build_model)
 
     # 觸發下一個階段
-    trigger(os.environ["next_stage"])
+    next_stage = os.environ["next_stage"]
+    trigger(next_stage)
 
-    return response(200, f"mnist-model-build completed, trigger stage {os.environ['next_stage']}...")
+    return response(200, f"mnist-model-build completed, trigger stage {next_stage}...")
 
 
 def model_build():
@@ -109,8 +110,8 @@ def connect_minio():
 
     return Minio(
         "127.0.0.1:9001",
-        access_key="minioadmin",
-        secret_key="minioadmin",
+        access_key="jvP0qXF2hzZ81TbxWjfK",
+        secret_key="T2pgQ7IPinrV99tLmGrN7O5qhslc0Dkl7S6RW2oG",
         secure=False
     )
 

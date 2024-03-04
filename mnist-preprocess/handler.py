@@ -3,7 +3,7 @@ import numpy as np
 import os
 import requests
 from keras.datasets import mnist
-from keras.utils import np_utils
+from keras import utils
 from minio import Minio
 from minio.error import S3Error
 
@@ -42,9 +42,10 @@ def handle(req):
                           upload_data=y_TestOneHot)
 
     # 觸發下一個階段
-    trigger(os.environ["next_stage"])
+    next_stage = os.environ["next_stage"]
+    trigger(next_stage)
 
-    return response(200, f"mnist-preprocess completed, trigger stage {os.environ["next_stage"]}...")
+    return response(200, f"mnist-model-build completed, trigger stage {next_stage}...")
 
 
 def data_preprocess():
@@ -91,8 +92,8 @@ def data_one_hot_encoding(y_train, y_test):
         y_test (numpy.ndarray): 測試資料標籤
     """
 
-    y_TrainOneHot = np_utils.to_categorical(y_train)
-    y_TestOneHot = np_utils.to_categorical(y_test)
+    y_TrainOneHot = utils.to_categorical(y_train)
+    y_TestOneHot = utils.to_categorical(y_test)
 
     return y_TrainOneHot, y_TestOneHot
 
@@ -101,9 +102,9 @@ def connect_minio():
     """連接 Minio Server"""
 
     return Minio(
-        "127.0.0.1:9001",
-        access_key="minioadmin",
-        secret_key="minioadmin",
+        "10.101.85.170:9001",
+        access_key="jvP0qXF2hzZ81TbxWjfK",
+        secret_key="T2pgQ7IPinrV99tLmGrN7O5qhslc0Dkl7S6RW2oG",
         secure=False
     )
 
@@ -122,7 +123,7 @@ def create_buckets(client, bucket_names: list[str]):
         client: Minio Client instance
         bucket_names (list[str]): 要建立的 Minio Bucket 名稱
     """
-
+    print(f"bucket_names: {bucket_names}")
     for name in bucket_names:
         if not client.bucket_exists(name):
             client.make_bucket(name)

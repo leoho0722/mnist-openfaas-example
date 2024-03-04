@@ -42,11 +42,12 @@ def handle(req):
                           bucket_name=bucket_names[0],
                           object_name="training_result",
                           upload_data=training_result)
-    
-    # 觸發下一個階段
-    trigger(os.environ["next_stage"])
 
-    return response(200, f"mnist-training-model completed, trigger stage {os.environ["next_stage"]}...")
+    # 觸發下一個階段
+    next_stage = os.environ["next_stage"]
+    trigger(next_stage)
+
+    return response(200, f"mnist-model-build completed, trigger stage {next_stage}...")
 
 
 def training_model(model, normalize_data, onehot_data):
@@ -79,8 +80,8 @@ def connect_minio():
 
     return Minio(
         "127.0.0.1:9001",
-        access_key="minioadmin",
-        secret_key="minioadmin",
+        access_key="jvP0qXF2hzZ81TbxWjfK",
+        secret_key="T2pgQ7IPinrV99tLmGrN7O5qhslc0Dkl7S6RW2oG",
         secure=False
     )
 

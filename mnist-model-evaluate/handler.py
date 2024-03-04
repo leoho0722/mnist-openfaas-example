@@ -77,8 +77,8 @@ def connect_minio():
 
     return Minio(
         "127.0.0.1:9001",
-        access_key="minioadmin",
-        secret_key="minioadmin",
+        access_key="jvP0qXF2hzZ81TbxWjfK",
+        secret_key="T2pgQ7IPinrV99tLmGrN7O5qhslc0Dkl7S6RW2oG",
         secure=False
     )
 

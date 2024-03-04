@@ -12,7 +12,7 @@ def handle(req):
     data = json.loads(req)
     next_stage = data["next_stage"]
     trigger_next_stage(next_stage)
-    threading.Thread(target=trigger_next_stage).start()
+    threading.Thread(target=trigger_next_stage(next_stage)).start()
 
     return response(200, f"next stage {next_stage} triggered...")
 

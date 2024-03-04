@@ -1,3 +1,5 @@
 keras
+tensorflow
 numpy
 minio
+requests

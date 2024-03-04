@@ -1,2 +1,4 @@
 keras
+tensorflow
 minio
+requests
