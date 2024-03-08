@@ -1,7 +1,7 @@
 version: 1.0
 provider:
   name: openfaas
-  gateway: http://127.0.0.1:8080
+  gateway: http://10.0.0.156:31112
 functions:
   # Stage 1: 資料預處理
   mnist-preprocess:
@@ -9,32 +9,36 @@ functions:
     handler: ./mnist-preprocess
     image: leoho0722/mnist-preprocess:0.0.1
     environment:
-      next_stage: "mnist-model-build"
+      minio_api_endpoint: "10.0.0.156:9000"
+      minio_access_key: "minioadmin"
+      minio_secret_key: "minioadmin"
+      next_stage: "mnist-training-model"
       bucket_names: "mnist-normalize,mnist-onehot-encoding"
 
-  # Stage 2: 建立模型
-  mnist-model-build:
-    lang: python3-flask-debian
-    handler: ./mnist-model-build
-    image: leoho0722/mnist-model-build:0.0.1
-    environment:
-      next_stage: "mnist-training-model"
-      bucket_names: "mnist-model-build"
-
-  # Stage 3: 訓練模型
+  # Stage 2: 建立與訓練模型
   mnist-training-model:
     lang: python3-flask-debian
     handler: ./mnist-training-model
     image: leoho0722/mnist-training-model:0.0.1
     environment:
+      minio_api_endpoint: "10.0.0.156:9000"
+      minio_access_key: "minioadmin"
+      minio_secret_key: "minioadmin"
       next_stage: "mnist-model-evaluate"
       bucket_names: "mnist-training-model"
 
-  # Stage 4: 模型評估與預測
+  # Stage 3: 模型評估與預測
   mnist-model-evaluate:
     lang: python3-flask-debian
     handler: ./mnist-model-evaluate
     image: leoho0722/mnist-model-evaluate:0.0.1
+    environment:
+      minio_api_endpoint: "10.0.0.156:9000"
+      minio_access_key: "minioadmin"
+      minio_secret_key: "minioadmin"
+      bucket_names: "mnist-model-evaluate"
+      requeue: false
+      next_stage: "mnist-preprocess"
 
   # Stage Trigger
   mnist-faas-trigger:

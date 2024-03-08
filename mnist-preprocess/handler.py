@@ -1,11 +1,19 @@
-import io
 import numpy as np
 import os
+import pickle
 import requests
-from keras.datasets import mnist
+
 from keras import utils
+from keras.datasets import mnist
+
 from minio import Minio
 from minio.error import S3Error
+
+
+X_TRAIN4D_NORMALIZE_PKL_FILENAME = "X_Train4D_normalize.pkl"
+X_TEST4D_NORMALIZE_PKL_FILENAME = "X_Test4D_normalize.pkl"
+Y_TRAIN_ONE_HOT_ENCODING_PKL_FILENAME = "y_Train_One_Hot_Encoding.pkl"
+Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME = "y_TestOneHot.pkl"
 
 
 def handle(req):
@@ -20,26 +28,30 @@ def handle(req):
     create_buckets(minioClient, bucket_names)
 
     X_Train4D_normalize, X_Test4D_normalize, y_TrainOneHot, y_TestOneHot = data_preprocess()
+    write_file(f"{X_TRAIN4D_NORMALIZE_PKL_FILENAME}", X_Train4D_normalize)
+    write_file(f"{X_TEST4D_NORMALIZE_PKL_FILENAME}", X_Test4D_normalize)
+    write_file(f"{Y_TRAIN_ONE_HOT_ENCODING_PKL_FILENAME}", y_TrainOneHot)
+    write_file(f"{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}", y_TestOneHot)
 
-    # 上傳資料至 Minio Bucket
+    # 上傳檔案至 Minio Bucket
     # normalize
-    upload_data_to_bucket(client=minioClient,
+    upload_file_to_bucket(client=minioClient,
                           bucket_name=bucket_names[0],
-                          object_name="X_Train4D_normalize",
-                          upload_data=X_Train4D_normalize)
-    upload_data_to_bucket(client=minioClient,
+                          object_name=X_TRAIN4D_NORMALIZE_PKL_FILENAME,
+                          file_path=f"/home/app/{X_TRAIN4D_NORMALIZE_PKL_FILENAME}")
+    upload_file_to_bucket(client=minioClient,
                           bucket_name=bucket_names[0],
-                          object_name="X_Test4D_normalize",
-                          upload_data=X_Test4D_normalize)
+                          object_name=X_TEST4D_NORMALIZE_PKL_FILENAME,
+                          file_path=f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
     # onehot encoding
-    upload_data_to_bucket(client=minioClient,
+    upload_file_to_bucket(client=minioClient,
                           bucket_name=bucket_names[1],
-                          object_name="y_TrainOneHot",
-                          upload_data=y_TrainOneHot)
-    upload_data_to_bucket(client=minioClient,
+                          object_name=Y_TRAIN_ONE_HOT_ENCODING_PKL_FILENAME,
+                          file_path=f"/home/app/{Y_TRAIN_ONE_HOT_ENCODING_PKL_FILENAME}")
+    upload_file_to_bucket(client=minioClient,
                           bucket_name=bucket_names[1],
-                          object_name="y_TestOneHot",
-                          upload_data=y_TestOneHot)
+                          object_name=Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME,
+                          file_path=f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
 
     # 觸發下一個階段
     next_stage = os.environ["next_stage"]
@@ -101,10 +113,14 @@ def data_one_hot_encoding(y_train, y_test):
 def connect_minio():
     """連接 Minio Server"""
 
+    MINIO_API_ENDPOINT = os.environ["minio_api_endpoint"]
+    MINIO_ACCESS_KEY = os.environ["minio_access_key"]
+    MINIO_SECRET_KEY = os.environ["minio_secret_key"]
+
     return Minio(
-        "10.101.85.170:9001",
-        access_key="jvP0qXF2hzZ81TbxWjfK",
-        secret_key="T2pgQ7IPinrV99tLmGrN7O5qhslc0Dkl7S6RW2oG",
+        MINIO_API_ENDPOINT,
+        access_key=MINIO_ACCESS_KEY,
+        secret_key=MINIO_SECRET_KEY,
         secure=False
     )
 
@@ -116,57 +132,57 @@ def get_bucket_names():
     return bucket_names.split(",")
 
 
-def create_buckets(client, bucket_names: list[str]):
+def create_buckets(client, bucket_names: list):
     """建立 Minio Bucket
 
     Args:
         client: Minio Client instance
-        bucket_names (list[str]): 要建立的 Minio Bucket 名稱
+        bucket_names (list): 要建立的 Minio Bucket 名稱
     """
+
     print(f"bucket_names: {bucket_names}")
     for name in bucket_names:
-        if not client.bucket_exists(name):
+        if client.bucket_exists(name):
+            print(f"Bucket {name} already exists")
+        else:
             client.make_bucket(name)
             print(f"Bucket {name} created")
-        else:
-            print(f"Bucket {name} already exists")
 
 
-def upload_data_to_bucket(client, bucket_name, object_name, upload_data):
+def upload_file_to_bucket(client, bucket_name, object_name, file_path):
     """上傳資料到 Minio Bucket 內
 
     Args:
         client: Minio Client instance
         bucket_name (str): Minio Bucket 名稱
         object_name (str): 要上傳到 Minio Bucket 的 object 名稱
-        upload_data (object): 要上傳到 Minio Bucket 的資料
+        filename (object): 要上傳到 Minio Bucket 的檔案名稱
     """
 
     try:
-        client.put_object(bucket_name=bucket_name,
-                          object_name=object_name,
-                          data=io.BytesIO(upload_data),
-                          length=-1,
-                          part_size=10*1024*1024)
+        client.fput_object(bucket_name=bucket_name,
+                           object_name=object_name,
+                           file_path=file_path)
     except S3Error as err:
         print(
-            f"upload data {upload_data} to minio bucket {bucket_name} occurs error. Error: {err}"
+            f"upload file {file_path} to minio bucket {bucket_name} occurs error. Error: {err}"
         )
 
 
-def trigger(next_stage: str):
-    """觸發下一個階段
+def write_file(filename: str, data):
+    with open(filename, 'wb') as f:
+        pickle.dump(data, f)
 
-    Args:
-        next_stage (str): 下一個階段名稱
-    """
+
+def trigger(stage_name: str):
+    """觸發下一個階段"""
 
     req_body = {
-        "current_stage": "mnist-preprocess",
-        "next_stage": next_stage
+        "next_stage": stage_name
     }
+
     _ = requests.post(
-        "http://gateway.openfaas:8080/function/mnist-faas-trigger",
+        "http://10.0.0.156:31112/function/mnist-faas-trigger",
         json=req_body
     )
 

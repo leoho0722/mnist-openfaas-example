@@ -9,6 +9,7 @@ def handle(req):
     Args:
         req (str): request body
     """
+
     data = json.loads(req)
     next_stage = data["next_stage"]
     trigger_next_stage(next_stage)
@@ -24,7 +25,8 @@ def trigger_next_stage(stage: str):
         stage (str): next stage name
     """
 
-    _ = requests.get(f"http://gateway.openfaas:8080/function/{stage}")
+    _ = requests.get(
+        f"http://10.0.0.156:31112/function/{stage}")
     print(f"next stage {stage} triggered...")
 
 
@@ -38,5 +40,5 @@ def response(statusCode: int, message: str):
 
     return {
         "statusCode": statusCode,
-        "message": message,
+        "message": message
     }
