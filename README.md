@@ -4,6 +4,8 @@
 
 ### Docker
 
+[Docker Official Documentation](https://docs.docker.com/engine/install/ubuntu/)
+
 #### Install Docker Engine on Ubuntu
 
 * Step 1: Set up Docker's apt repository.
@@ -31,6 +33,8 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 ```
 
 ### OpenFaaS
+
+See [openfaas-example README.md](https://github.com/leoho0722/openfaas-example/blob/main/README.md)
 
 #### OpenFaaS Command Line Tool (faas-cli)
 
@@ -79,6 +83,8 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 ### MinIO Server
 
+[MinIO Official Documentation](https://min.io/docs/minio/linux/index.html)
+
 #### Install
 
 * Ubuntu
@@ -109,6 +115,8 @@ http://<HOST_IP>:9001
 
 ### MinIO Client
 
+[MinIO Official Documentation](https://min.io/docs/minio/linux/index.html)
+
 #### Install
 
 ```shell
@@ -128,7 +136,9 @@ mc admin info <ALIAS_NAME>
 # mc admin info local
 ```
 
-##### Python Client SDK
+##### Python Client API
+
+[MinIO Python Client API Official Documentation](https://min.io/docs/minio/linux/developers/python/API.html)
 
 ```python
 from minio import Minio
@@ -181,3 +191,7 @@ make faas-up
     ```shell
     make faas-remove
     ```
+
+## References
+
+1. <https://neptune.ai/blog/saving-trained-model-in-python>
