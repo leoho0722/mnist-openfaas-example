@@ -1,2 +1,5 @@
 minio
 requests
+keras
+tensorflow
+numpy

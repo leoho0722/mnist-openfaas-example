@@ -1,7 +1,8 @@
-import numpy as np
 import os
 import pickle
 import requests
+
+import numpy as np
 
 from keras import utils
 from keras.datasets import mnist
@@ -14,6 +15,7 @@ X_TRAIN4D_NORMALIZE_PKL_FILENAME = "X_Train4D_normalize.pkl"
 X_TEST4D_NORMALIZE_PKL_FILENAME = "X_Test4D_normalize.pkl"
 Y_TRAIN_ONE_HOT_ENCODING_PKL_FILENAME = "y_Train_One_Hot_Encoding.pkl"
 Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME = "y_TestOneHot.pkl"
+OPENFAAS_GATEWAY_ENDPOINT = os.environ["openfaas_gateway_endpoint"]
 
 
 def handle(req):
@@ -126,18 +128,18 @@ def connect_minio():
 
 
 def get_bucket_names():
-    """從環境變數中取得 Minio Bucket 名稱"""
+    """從環境變數中取得 MinIO Bucket 名稱"""
 
     bucket_names = os.environ["bucket_names"]
     return bucket_names.split(",")
 
 
 def create_buckets(client, bucket_names: list):
-    """建立 Minio Bucket
+    """建立 MinIO Bucket
 
     Args:
         client: Minio Client instance
-        bucket_names (list): 要建立的 Minio Bucket 名稱
+        bucket_names (list): 要建立的 MinIO Bucket 名稱
     """
 
     print(f"bucket_names: {bucket_names}")
@@ -149,14 +151,14 @@ def create_buckets(client, bucket_names: list):
             print(f"Bucket {name} created")
 
 
-def upload_file_to_bucket(client, bucket_name, object_name, file_path):
-    """上傳資料到 Minio Bucket 內
+def upload_file_to_bucket(client, bucket_name: str, object_name: str, file_path: str):
+    """上傳資料到 MinIO Bucket 內
 
     Args:
-        client: Minio Client instance
-        bucket_name (str): Minio Bucket 名稱
-        object_name (str): 要上傳到 Minio Bucket 的 object 名稱
-        filename (object): 要上傳到 Minio Bucket 的檔案名稱
+        client: MinIO Client instance
+        bucket_name (str): MinIO Bucket 名稱
+        object_name (str): 要上傳到 MinIO Bucket 的 object 名稱
+        filename (object): 要上傳到 MinIO Bucket 的檔案名稱
     """
 
     try:
@@ -174,15 +176,19 @@ def write_file(filename: str, data):
         pickle.dump(data, f)
 
 
-def trigger(stage_name: str):
-    """觸發下一個階段"""
+def trigger(next_stage: str):
+    """觸發下一個階段
+    
+    Args:
+        next_stage (str): 下一個階段的名稱
+    """
 
     req_body = {
-        "next_stage": stage_name
+        "next_stage": next_stage
     }
 
     _ = requests.post(
-        "http://10.0.0.156:31112/function/mnist-faas-trigger",
+        f"http://{OPENFAAS_GATEWAY_ENDPOINT}/function/mnist-faas-trigger",
         json=req_body
     )
 

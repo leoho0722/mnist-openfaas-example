@@ -11,8 +11,8 @@ from minio.error import S3Error
 
 X_TRAIN4D_NORMALIZE_PKL_FILENAME = "X_Train4D_normalize.pkl"
 Y_TRAIN_ONE_HOT_ENCODING_PKL_FILENAME = "y_Train_One_Hot_Encoding.pkl"
-TRAINED_MODEL_PKL_FILENAME = "trained_model.pkl"
-TRAINING_RESULT_PKL_FILENAME = "training_result.pkl"
+TRAINED_MODEL_KERAS_FILENAME = "trained_model.keras"
+OPENFAAS_GATEWAY_ENDPOINT = os.environ["openfaas_gateway_endpoint"]
 
 
 def handle(req):
@@ -44,25 +44,20 @@ def handle(req):
     model = model_build()
 
     # 訓練模型
-    trained_model, training_result = training_model(model=model,
-                                                    normalize_data=X_Train4D_normalize,
-                                                    onehot_data=y_TrainOneHot)
+    trained_model, _ = training_model(model=model, 
+                                      normalize_data=X_Train4D_normalize,
+                                      onehot_data=y_TrainOneHot)
 
     # 將訓練後的模型資料儲存到 MinIO Bucket
-    write_file(TRAINED_MODEL_PKL_FILENAME, trained_model)
+    save_trained_model(trained_model, TRAINED_MODEL_KERAS_FILENAME)
     upload_file_to_bucket(client=minioClient,
                           bucket_name=bucket_names[0],
-                          object_name=TRAINED_MODEL_PKL_FILENAME,
-                          upload_data=f"/home/app/{TRAINED_MODEL_PKL_FILENAME}")
-    write_file(TRAINING_RESULT_PKL_FILENAME, training_result)
-    upload_file_to_bucket(client=minioClient,
-                          bucket_name=bucket_names[0],
-                          object_name=TRAINING_RESULT_PKL_FILENAME,
-                          upload_data=f"/home/app/{TRAINING_RESULT_PKL_FILENAME}")
+                          object_name=TRAINED_MODEL_KERAS_FILENAME,
+                          file_path=f"/home/app/{TRAINED_MODEL_KERAS_FILENAME}")
 
     # 觸發下一個階段
     next_stage = os.environ["next_stage"]
-    # trigger(next_stage)
+    trigger(next_stage)
 
     return response(200, f"mnist-model-build completed, trigger stage {next_stage}...")
 
@@ -157,11 +152,22 @@ def training_model(model, normalize_data, onehot_data):
     train_result = model.fit(x=normalize_data,
                              y=onehot_data,
                              validation_split=0.2,
-                             epochs=1,  # 10
-                             batch_size=300,  # 300
+                             epochs=10,
+                             batch_size=300,
                              verbose=1)
 
     return model, train_result
+
+
+def save_trained_model(model, filename: str):
+    """儲存訓練好的模型
+    
+    Args:
+        model (keras.models.Sequential): keras.models.Sequential
+        filename (str): 訓練好的模型檔名
+    """
+
+    model.save(filename)
 
 
 def connect_minio():
@@ -202,7 +208,7 @@ def create_buckets(client, bucket_names: list):
             print(f"Bucket {name} created")
 
 
-def get_file_from_bucket(client, bucket_name, object_name, file_path):
+def get_file_from_bucket(client, bucket_name: str, object_name: str, file_path: str):
     """取得 MinIO Bucket 內的資料
 
     Args:
@@ -215,7 +221,7 @@ def get_file_from_bucket(client, bucket_name, object_name, file_path):
     client.fget_object(bucket_name, object_name, file_path)
 
 
-def upload_file_to_bucket(client, bucket_name, object_name, file_path):
+def upload_file_to_bucket(client, bucket_name: str, object_name: str, file_path: str):
     """上傳資料到 MinIO Bucket 內
 
     Args:
@@ -235,12 +241,13 @@ def upload_file_to_bucket(client, bucket_name, object_name, file_path):
         )
 
 
-def write_file(filename: str, data):
-    with open(filename, 'wb') as f:
-        pickle.dump(data, f)
-
-
 def convert_pkl_to_data(filename: str):
+    """將 pkl 檔案轉換回原始資料
+    
+    Args:
+        filename (str): pkl 檔案名稱
+    """
+
     with open(filename, 'rb') as f:
         data = pickle.load(f)
     return data
@@ -248,16 +255,16 @@ def convert_pkl_to_data(filename: str):
 
 def trigger(next_stage: str):
     """觸發下一個階段
-
+    
     Args:
-        next_stage (str): 下一個階段名稱
+        next_stage (str): 下一個階段的名稱
     """
 
     req_body = {
         "next_stage": next_stage
     }
     _ = requests.post(
-        "http://10.0.0.156:31112/function/mnist-faas-trigger",
+        f"http://{OPENFAAS_GATEWAY_ENDPOINT}/function/mnist-faas-trigger",
         json=req_body
     )
 

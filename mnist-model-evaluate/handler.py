@@ -1,13 +1,16 @@
 import os
+import pickle
 import requests
 
-from minio import Minio
-from minio.error import S3Error
+import keras
+import numpy as np
 
-TRAINED_MODEL_PKL_FILENAME = "trained_model.pkl"
-TRAINING_RESULT_PKL_FILENAME = "training_result.pkl"
+from minio import Minio
+
+TRAINED_MODEL_KERAS_FILENAME = "trained_model.keras"
 X_TEST4D_NORMALIZE_PKL_FILENAME = "X_Test4D_normalize.pkl"
 Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME = "y_TestOneHot.pkl"
+OPENFAAS_GATEWAY_ENDPOINT = os.environ["openfaas_gateway_endpoint"]
 
 
 def handle(req):
@@ -19,29 +22,29 @@ def handle(req):
 
     minioClient = connect_minio()
 
-    trained_model = get_file_from_bucket(client=minioClient,
-                                         bucket_name="mnist-training-model",
-                                         object_name=TRAINED_MODEL_PKL_FILENAME,
-                                         file_path=f"/home/app/{TRAINED_MODEL_PKL_FILENAME}")
-    # training_result = get_file_from_bucket(client=minioClient,
-    #                                        bucket_name="mnist-training-model",
-    #                                        object_name=TRAINING_RESULT_PKL_FILENAME,
-    #                                        file_path=f"/home/app/{TRAINING_RESULT_PKL_FILENAME}")
-    # 從 Minio 取得測試資料
-    X_Test4D_normalize = get_file_from_bucket(client=minioClient,
-                                              bucket_name="mnist-preprocess",
-                                              object_name=X_TEST4D_NORMALIZE_PKL_FILENAME,
-                                              file_path=f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
-    y_TestOneHot = get_file_from_bucket(client=minioClient,
-                                        bucket_name="mnist-preprocess",
-                                        object_name=Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME,
-                                        file_path=f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
+    get_file_from_bucket(client=minioClient,
+                         bucket_name="mnist-training-model",
+                         object_name=TRAINED_MODEL_KERAS_FILENAME,
+                         file_path=f"/home/app/{TRAINED_MODEL_KERAS_FILENAME}")
+    model = keras.models.load_model(TRAINED_MODEL_KERAS_FILENAME)
 
+    # 從 Minio 取得測試資料
+    get_file_from_bucket(client=minioClient,
+                         bucket_name="mnist-normalize",
+                         object_name=X_TEST4D_NORMALIZE_PKL_FILENAME,
+                         file_path=f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
+    X_Test4D_normalize = convert_pkl_to_data(f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
+    get_file_from_bucket(client=minioClient,
+                         bucket_name="mnist-onehot-encoding",
+                         object_name=Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME,
+                         file_path=f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
+    y_TestOneHot = convert_pkl_to_data(f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
+    
     # 評估模型
-    evaluate_model(trained_model, X_Test4D_normalize, y_TestOneHot)
+    evaluate_model(model, X_Test4D_normalize, y_TestOneHot)
 
     # 預測模型
-    prediction_model(trained_model, X_Test4D_normalize)
+    prediction_model(model, X_Test4D_normalize)
 
     requeue = os.environ["requeue"]
     if requeue == 'true':
@@ -77,10 +80,11 @@ def prediction_model(model, test_data):
 
     print("\t[Info] Making prediction of X_Test4D_norm")
     # Making prediction and save result to prediction
-    prediction = model.predict_classes(test_data)
+    predict_x=model.predict(test_data)
+    classes_x=np.argmax(predict_x, axis=1)
     print()
     print("\t[Info] Show 10 prediction result (From 240):")
-    print("%s\n" % (prediction[240:250]))
+    print("%s\n" % (classes_x[240:250]))
 
 
 def connect_minio():
@@ -121,7 +125,7 @@ def create_buckets(client, bucket_names: list):
             print(f"Bucket {name} created")
 
 
-def get_file_from_bucket(client, bucket_name, object_name, file_path):
+def get_file_from_bucket(client, bucket_name: str, object_name: str, file_path: str):
     """取得 MinIO Bucket 內的資料
 
     Args:
@@ -134,6 +138,18 @@ def get_file_from_bucket(client, bucket_name, object_name, file_path):
     client.fget_object(bucket_name, object_name, file_path)
 
 
+def convert_pkl_to_data(filename: str):
+    """將 pkl 檔案轉換回原始資料
+    
+    Args:
+        filename (str): pkl 檔案名稱
+    """
+
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data
+
+
 def trigger(next_stage: str):
     """觸發下一個階段
 
@@ -142,11 +158,10 @@ def trigger(next_stage: str):
     """
 
     req_body = {
-        "current_stage": "mnist-preprocess",
         "next_stage": next_stage
     }
     _ = requests.post(
-        "http://10.0.0.156:31112/function/mnist-faas-trigger",
+        f"http://{OPENFAAS_GATEWAY_ENDPOINT}/function/mnist-faas-trigger",
         json=req_body
     )
 

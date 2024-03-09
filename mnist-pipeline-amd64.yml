@@ -7,7 +7,7 @@ functions:
   mnist-preprocess:
     lang: python3-flask-debian
     handler: ./mnist-preprocess
-    image: leoho0722/mnist-preprocess:0.0.1
+    image: leoho0722/mnist-preprocess:0.0.1-amd64
     environment:
       minio_api_endpoint: "10.0.0.156:9000" # "192.168.95.146:9000"
       minio_access_key: "minioadmin"
@@ -20,7 +20,7 @@ functions:
   mnist-training-model:
     lang: python3-flask-debian
     handler: ./mnist-training-model
-    image: leoho0722/mnist-training-model:0.0.1
+    image: leoho0722/mnist-training-model:0.0.1-amd64
     environment:
       minio_api_endpoint: "10.0.0.156:9000" # "192.168.95.146:9000"
       minio_access_key: "minioadmin"
@@ -33,7 +33,7 @@ functions:
   mnist-model-evaluate:
     lang: python3-flask-debian
     handler: ./mnist-model-evaluate
-    image: leoho0722/mnist-model-evaluate:0.0.1
+    image: leoho0722/mnist-model-evaluate:0.0.1-amd64
     environment:
       minio_api_endpoint: "10.0.0.156:9000" # "192.168.95.146:9000"
       minio_access_key: "minioadmin"
@@ -47,6 +47,6 @@ functions:
   mnist-faas-trigger:
     lang: python3-flask-debian
     handler: ./mnist-faas-trigger
-    image: leoho0722/mnist-faas-trigger:0.0.1
+    image: leoho0722/mnist-faas-trigger:0.0.1-amd64
     environment:
       openfaas_gateway_endpoint: "10.0.0.156:31112" # "192.168.95.146:31112"
