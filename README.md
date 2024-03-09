@@ -78,7 +78,11 @@ See [openfaas-example README.md](https://github.com/leoho0722/openfaas-example/b
 * Step 5: Login OpenFaaS WebUI via credential
 
     ```shell
+    # Default gateway endpoint is http://127.0.0.1:8080
     faas-cli login -u admin -p $PASSWORD
+
+    # Specify gateway endpoint, for example http://10.0.0.156:31112
+    faas-cli login -u admin -p $PASSWORD -g http://10.0.0.156:31112
     ```
 
 ### MinIO Server
@@ -144,7 +148,7 @@ mc admin info <ALIAS_NAME>
 from minio import Minio
 
 def connect_minio():
-    """連接 MinIO Server"""
+    """Connect to MinIO Server"""
 
     MINIO_API_ENDPOINT = os.environ["minio_api_endpoint"]
     MINIO_ACCESS_KEY = os.environ["minio_access_key"]
@@ -154,7 +158,7 @@ def connect_minio():
         MINIO_API_ENDPOINT,
         access_key=MINIO_ACCESS_KEY,
         secret_key=MINIO_SECRET_KEY,
-        secure=False # 不使用 https 加密連線
+        secure=False # Disable HTTPS
     )
 ```
 
@@ -163,7 +167,11 @@ def connect_minio():
 ### One-key to build, push, deploy (**Recommand**)
 
 ```shell
+# Default architecture is amd64
 make faas-up
+
+# Specify architecture, for example arm64
+make faas-up ARCH=arm64
 ```
 
 ### Manual
@@ -171,25 +179,41 @@ make faas-up
 * Build
 
     ```shell
+    # Default architecture is amd64
     make faas-build
+
+    # Specify architecture, for example arm64
+    make faas-build ARCH=arm64
     ```
 
 * Push
 
     ```shell
+    # Default architecture is amd64
     make faas-push
+
+    # Specify architecture, for example arm64
+    make faas-push ARCH=arm64
     ```
 
 * Deploy
 
     ```shell
+    # Default architecture is amd64
     make faas-deploy
+
+    # Specify architecture, for example arm64
+    make faas-deploy ARCH=arm64
     ```
 
 * Remove
 
     ```shell
+    # Default architecture is amd64
     make faas-remove
+
+    # Specify architecture, for example arm64
+    make faas-remove ARCH=arm64
     ```
 
 ## References
