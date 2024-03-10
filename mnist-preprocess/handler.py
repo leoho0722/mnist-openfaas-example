@@ -178,7 +178,7 @@ def write_file(filename: str, data):
 
 def trigger(next_stage: str):
     """觸發下一個階段
-    
+
     Args:
         next_stage (str): 下一個階段的名稱
     """

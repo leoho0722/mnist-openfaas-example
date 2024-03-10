@@ -44,7 +44,7 @@ def handle(req):
     model = model_build()
 
     # 訓練模型
-    trained_model, _ = training_model(model=model, 
+    trained_model, _ = training_model(model=model,
                                       normalize_data=X_Train4D_normalize,
                                       onehot_data=y_TrainOneHot)
 
@@ -161,7 +161,7 @@ def training_model(model, normalize_data, onehot_data):
 
 def save_trained_model(model, filename: str):
     """儲存訓練好的模型
-    
+
     Args:
         model (keras.models.Sequential): keras.models.Sequential
         filename (str): 訓練好的模型檔名
@@ -243,7 +243,7 @@ def upload_file_to_bucket(client, bucket_name: str, object_name: str, file_path:
 
 def convert_pkl_to_data(filename: str):
     """將 pkl 檔案轉換回原始資料
-    
+
     Args:
         filename (str): pkl 檔案名稱
     """
@@ -255,7 +255,7 @@ def convert_pkl_to_data(filename: str):
 
 def trigger(next_stage: str):
     """觸發下一個階段
-    
+
     Args:
         next_stage (str): 下一個階段的名稱
     """

@@ -5,6 +5,7 @@ import threading
 
 OPENFAAS_GATEWAY_ENDPOINT = os.environ["openfaas_gateway_endpoint"]
 
+
 def handle(req):
     """handle a request to the function
 
@@ -15,7 +16,7 @@ def handle(req):
     data = json.loads(req)
     next_stage = data["next_stage"]
     trigger_next_stage(next_stage)
-    
+
     return response(200, f"next stage {next_stage} triggered...")
 
 

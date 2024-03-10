@@ -33,13 +33,15 @@ def handle(req):
                          bucket_name="mnist-normalize",
                          object_name=X_TEST4D_NORMALIZE_PKL_FILENAME,
                          file_path=f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
-    X_Test4D_normalize = convert_pkl_to_data(f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
+    X_Test4D_normalize = convert_pkl_to_data(
+        f"/home/app/{X_TEST4D_NORMALIZE_PKL_FILENAME}")
     get_file_from_bucket(client=minioClient,
                          bucket_name="mnist-onehot-encoding",
                          object_name=Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME,
                          file_path=f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
-    y_TestOneHot = convert_pkl_to_data(f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
-    
+    y_TestOneHot = convert_pkl_to_data(
+        f"/home/app/{Y_TEST_ONE_HOT_ENCODING_PKL_FILENAME}")
+
     # 評估模型
     evaluate_model(model, X_Test4D_normalize, y_TestOneHot)
 
@@ -80,8 +82,8 @@ def prediction_model(model, test_data):
 
     print("\t[Info] Making prediction of X_Test4D_norm")
     # Making prediction and save result to prediction
-    predict_x=model.predict(test_data)
-    classes_x=np.argmax(predict_x, axis=1)
+    predict_x = model.predict(test_data)
+    classes_x = np.argmax(predict_x, axis=1)
     print()
     print("\t[Info] Show 10 prediction result (From 240):")
     print("%s\n" % (classes_x[240:250]))
@@ -140,7 +142,7 @@ def get_file_from_bucket(client, bucket_name: str, object_name: str, file_path: 
 
 def convert_pkl_to_data(filename: str):
     """將 pkl 檔案轉換回原始資料
-    
+
     Args:
         filename (str): pkl 檔案名稱
     """
