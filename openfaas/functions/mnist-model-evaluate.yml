@@ -1,0 +1,18 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080 # http://10.0.0.196:31112 # http://192.168.95.146:31112
+functions:
+  # Stage 3: 模型評估與預測
+  mnist-model-evaluate:
+    lang: python3-flask-debian
+    handler: ./openfaas/functions/mnist-model-evaluate
+    image: leoho0722/mnist-model-evaluate:0.0.2
+    environment:
+      minio_api_endpoint: "10.0.0.196:9000" # "192.168.95.146:9000"
+      minio_access_key: "minioadmin"
+      minio_secret_key: "minioadmin"
+      openfaas_gateway_endpoint: "10.20.1.129:8000" # "10.0.0.196:31112" # "192.168.95.146:31112"
+      bucket_names: "mnist-model-evaluate"
+      requeue: false
+      next_stage: "mnist-preprocess"

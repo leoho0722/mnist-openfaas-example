@@ -114,7 +114,7 @@ MinIO WebUI default password: minioadmin
 http://<HOST_IP>:9001
 
 # Example
-# http://10.0.0.156:9001
+# http://10.0.0.196:9001
 ```
 
 ### MinIO Client
@@ -136,7 +136,7 @@ mc alias set <ALIAS_NAME> http://<HOST_IP>:9000 <ACCESS_KEY> <SECRET_KEY>
 mc admin info <ALIAS_NAME>
 
 # Example
-# mc alias set local http://10.0.0.156:9000 minioadmin minioadmin
+# mc alias set local http://10.0.0.196:9000 minioadmin minioadmin
 # mc admin info local
 ```
 

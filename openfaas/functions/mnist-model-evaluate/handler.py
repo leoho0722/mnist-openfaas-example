@@ -160,6 +160,7 @@ def trigger(next_stage: str):
     """
 
     req_body = {
+        "current_stage": "mnist-model-evaluate",
         "next_stage": next_stage
     }
     _ = requests.post(

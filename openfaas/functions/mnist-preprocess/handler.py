@@ -184,6 +184,7 @@ def trigger(next_stage: str):
     """
 
     req_body = {
+        "current_stage": "mnist-preprocess",
         "next_stage": next_stage
     }
 
